@@ -8,27 +8,55 @@ pipeline {
             }
         }
 
-        stage("Install Dependencies") {
+        stage("Build Docker Image") {
             steps {
-                bat 'npm install' // Fixed command to install npm dependencies
+                script {
+                    // Build the Docker image
+                    def imageId = docker.build("my-node-app:latest")
+                }
             }
         }
 
         stage("Run Tests") {
             steps {
-                sh 'npm test' // Run tests
+                script {
+                    // Run tests inside the Docker container
+                    docker.image("my-node-app:latest").inside {
+                        sh 'npm install'
+                        sh 'npm test'
+                    }
+                }
             }
         }
 
-        stage("Build") {
+        stage("Fetch Contextual Object") {
             steps {
-                bat 'npm run build' // Build the application
+                script {
+                    // Fetching the contextual object from an internal API
+                    def response = sh(script: "curl -s http://your-internal-api/context", returnStdout: true)
+                    def contextualObject = readJSON(text: response)
+                    
+                    // Use the contextual object as needed
+                    echo "Fetched contextual object: ${contextualObject}"
+                }
             }
         }
 
-        stage("Build Docker Image") {
+        stage("Deploy") {
             steps {
-                bat 'docker build -t my-node-app:1.0 .' // Correct docker build command
+                script {
+                    // Deploy your application or Docker image
+                    echo "Deploying the application..."
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                // Clean up after the build
+                echo "Cleaning up..."
             }
         }
     }
